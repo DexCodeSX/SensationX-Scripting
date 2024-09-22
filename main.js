@@ -1,60 +1,55 @@
-// Wait until the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', () => {
-  
-  // Variables for interactive elements
-  const learnMoreBtn = document.getElementById('learnMoreBtn');
-  const extraInfo = document.getElementById('extraInfo');
-  let isInfoVisible = false;
+function showAlert() {
+    alert("More details coming soon. Stay tuned for the SensationX script!");
+}
 
-  // Event listener for 'Learn More' button click
-  learnMoreBtn.addEventListener('click', () => {
-    if (!isInfoVisible) {
-      showExtraInfo();
-    } else {
-      hideExtraInfo();
-    }
-  });
+console.log('Bisam - About Me page loaded.');
 
-  // Function to show additional information with a smooth fade-in
-  function showExtraInfo() {
-    extraInfo.style.display = 'block';
-    extraInfo.innerHTML = `
-      <p>Welcome to the next level of Roblox scripting! Stay tuned for powerful exploits with SensationX!</p>
-    `;
-    learnMoreBtn.innerText = 'Show Less';
-    isInfoVisible = true;
-  }
+// Animated counters for skill percentages
+const counters = document.querySelectorAll('.counter');
+const speed = 200; // The lower the speed, the faster the animation
 
-  // Function to hide additional information
-  function hideExtraInfo() {
-    extraInfo.style.display = 'none';
-    learnMoreBtn.innerText = 'Learn More';
-    isInfoVisible = false;
-  }
+counters.forEach(counter => {
+    const updateCount = () => {
+        const target = +counter.getAttribute('data-target');
+        const count = +counter.innerText;
 
-  // Button hover effect (optional, more dynamic)
-  learnMoreBtn.addEventListener('mouseenter', () => {
-    learnMoreBtn.style.transform = 'translateY(-3px)';
-  });
+        const inc = target / speed;
 
-  learnMoreBtn.addEventListener('mouseleave', () => {
-    learnMoreBtn.style.transform = 'translateY(0px)';
-  });
-  
-  // Optional: Make the logo respond to a click with a smooth effect
-  const logo = document.querySelector('.logo');
-  logo.addEventListener('click', () => {
-    logo.style.transform = 'rotate(360deg)';
-    setTimeout(() => {
-      logo.style.transform = 'rotate(0deg)'; // Reset after animation
-    }, 500);
-  });
+        if (count < target) {
+            counter.innerText = Math.ceil(count + inc);
+            setTimeout(updateCount, 10);
+        } else {
+            counter.innerText = target;
+        }
+    };
 
-  // Accessibility improvement: Ensure key navigation for buttons
-  learnMoreBtn.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      learnMoreBtn.click();
-    }
-  });
+    updateCount();
+});
 
+// Scroll-triggered animations
+const faders = document.querySelectorAll('.fade-in-on-scroll');
+const cards = document.querySelectorAll('.floating-card');
+
+const appearOptions = {
+    threshold: 0.1,
+    rootMargin: "0px 0px -100px 0px"
+};
+
+const appearOnScroll = new IntersectionObserver(function(entries, appearOnScroll) {
+    entries.forEach(entry => {
+        if (!entry.isIntersecting) {
+            return;
+        } else {
+            entry.target.classList.add('active');
+            appearOnScroll.unobserve(entry.target);
+        }
+    });
+}, appearOptions);
+
+faders.forEach(fader => {
+    appearOnScroll.observe(fader);
+});
+
+cards.forEach(card => {
+    appearOnScroll.observe(card);
 });
