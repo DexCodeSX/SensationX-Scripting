@@ -9,6 +9,7 @@ body {
     font-size: 16pt;
     color: #333;
     background: linear-gradient(135deg, #74ebd5, #ACB6E5);
+    background-size: 400% 400%;  /* Enables smooth animation across the gradient */
     line-height: 1.6;
     display: flex;
     justify-content: center;
@@ -18,7 +19,7 @@ body {
     margin: 0;
     overflow-x: hidden;
     scroll-behavior: smooth;
-    transition: background-color 0.4s ease;
+    animation: gradientAnimation 10s ease infinite; /* New Animation */
 }
 
 .container {
@@ -51,7 +52,6 @@ body {
 h1, h2 {
     color: #2c3e50;
     margin-bottom: 10px;
-    transition: color 0.4s ease;
 }
 
 h1 {
@@ -67,7 +67,6 @@ p {
     font-size: 14pt;
     margin-bottom: 20px;
     color: #555;
-    transition: color 0.4s ease;
 }
 
 ul {
@@ -79,13 +78,22 @@ ul li {
     margin-bottom: 10px;
     font-size: 14pt;
     color: #555;
-    position: relative;
 }
 
-.counter {
-    font-weight: bold;
-    color: #3498db;
-    margin-left: 10px;
+.progress {
+    background-color: #f3f3f3;
+    border-radius: 10px;
+    height: 8px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 10px;
+    background-color: #3498db;
+    transition: width 1s ease-in-out;
 }
 
 .btn {
@@ -100,13 +108,11 @@ ul li {
     transition: all 0.3s ease;
     margin-top: 30px;
     width: auto;
-    max-width: 100%;
-    white-space: nowrap;
 }
 
 .btn:hover {
     background: linear-gradient(45deg, #2980b9, #3498db);
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 .separator {
@@ -128,12 +134,20 @@ ul li {
     transform: translateY(0);
 }
 
-@media (max-width: 600px) {
-    body {
-        padding: 0;
-        background: linear-gradient(135deg, #b3ffab, #12fff7);
+/* New Keyframe for Gradient Animation */
+@keyframes gradientAnimation {
+    0% {
+        background-position: 0% 50%;
     }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
 
+@media (max-width: 600px) {
     h1 {
         font-size: 24pt;
     }
@@ -149,8 +163,7 @@ ul li {
     .btn {
         padding: 12px 20px;
         font-size: 14pt;
-        width: auto;
-        max-width: 100%;
+        width: 100%;
     }
 
     .floating-card {
