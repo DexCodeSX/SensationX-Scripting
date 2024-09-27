@@ -4,7 +4,7 @@
 
 Welcome to my GitHub page! I’m Bisam, dedicated to crafting powerful Roblox exploit scripts using **Luau** and **JSON** for optimized, clean, and professional results. 
 
-[Visit my website](https://dexcodesx.github.io/Bisam-Aboutme/) to learn more!
+[Visit my website](https://dexcodesx.github.io/Bisam-Aboutme/)
 
 ## 🔥 Core Expertise
 
