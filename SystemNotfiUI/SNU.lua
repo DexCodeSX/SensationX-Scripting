@@ -33,6 +33,7 @@ Sorter.SortOrder = Enum.SortOrder.LayoutOrder
 Sorter.VerticalAlignment = Enum.VerticalAlignment.Bottom
 Sorter.Padding = UDim.new(0, 10)
 
+-- Function to merge default settings with user-provided options
 local function SetDefault(v1, v2)
 	v1 = v1 or {}
 	local v3 = {}
@@ -42,6 +43,7 @@ local function SetDefault(v1, v2)
 	return v3
 end
 
+-- Function to create a notification with customizable options
 function CreateNotification(Options)
 	local Default = {
 		Buttons = {
@@ -125,7 +127,9 @@ function CreateNotification(Options)
 		end)
 	end
 	Dismiss.Visible = true
+	
 	if not Options.NeverExpire then
+		-- Fade out and remove the notification after the specified time
 		task.delay(Options.Length, function()
 			if not Dismiss then return end
 			local c = {'Frame', 'ScrollingFrame'}
@@ -153,11 +157,12 @@ return CreateNotification
 	Length = 5, 
 	Buttons = {
 		[1] = {
-			Title = 'Dismiss', -- The button text
-			ClosesUI = true, -- Whether the button closes the UI when clicked
-			Callback = function() --[[ Action to perform when clicked --]] end
+			Title = 'Dismiss', -- Button text
+			ClosesUI = true, -- Closes notification on click
+			Callback = function() -- Action when button is clicked
+			end
 		}
 	},
-	NeverExpire = false -- Whether the notification never expires until dismissed
+	NeverExpire = false -- If true, notification remains until dismissed
  })
 ]]
