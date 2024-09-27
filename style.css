@@ -9,7 +9,7 @@ body {
     font-size: 16pt;
     color: #333;
     background: linear-gradient(135deg, #74ebd5, #ACB6E5);
-    background-size: 400% 400%;  /* Enables smooth animation across the gradient */
+    background-size: 400% 400%;
     line-height: 1.6;
     display: flex;
     justify-content: center;
@@ -19,7 +19,7 @@ body {
     margin: 0;
     overflow-x: hidden;
     scroll-behavior: smooth;
-    animation: gradientAnimation 10s ease infinite; /* New Animation */
+    animation: gradientAnimation 10s ease infinite;
 }
 
 .container {
@@ -134,7 +134,6 @@ ul li {
     transform: translateY(0);
 }
 
-/* New Keyframe for Gradient Animation */
 @keyframes gradientAnimation {
     0% {
         background-position: 0% 50%;
