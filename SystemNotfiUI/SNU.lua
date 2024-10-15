@@ -1,280 +1,185 @@
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
+local NotificationUI = {}
 
-local EnhancedNotificationSystem = {}
+-- Services
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
 
 -- Constants
-local FONT = Enum.Font.GothamSemibold
+local TWEEN_TIME = 0.6
+local DISPLAY_TIME = 5
+local MAX_NOTIFICATIONS = 5
+
+-- Color schemes
 local COLORS = {
-    BACKGROUND = Color3.fromRGB(40, 40, 40),
-    TEXT = Color3.fromRGB(255, 255, 255),
-    BUTTON = Color3.fromRGB(60, 60, 60),
-    BUTTON_HOVER = Color3.fromRGB(80, 80, 80),
-    SUCCESS = Color3.fromRGB(46, 204, 113),
-    WARNING = Color3.fromRGB(241, 196, 15),
-    ERROR = Color3.fromRGB(231, 76, 60),
-    INFO = Color3.fromRGB(52, 152, 219)
+    success = Color3.fromRGB(46, 204, 113),
+    info = Color3.fromRGB(52, 152, 219),
+    warning = Color3.fromRGB(241, 196, 15),
+    error = Color3.fromRGB(231, 76, 60)
 }
 
-local DEFAULT_OPTIONS = {
-    Title = "Notification",
-    Content = "This is a notification.",
-    Type = "info", -- "info", "success", "warning", "error"
-    Duration = 5,
-    Buttons = {
-        {
-            Text = "OK",
-            Callback = function() end
-        }
-    },
-    Position = UDim2.new(0.98, 0, 0.98, 0),
-    AnchorPoint = Vector2.new(1, 1),
-    Width = UDim.new(0, 300),
-    MaxNotifications = 5
-}
+-- Create main GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NotificationUI"
+ScreenGui.Parent = gethui()
 
-local notificationHolder
+local NotificationContainer = Instance.new("Frame")
+NotificationContainer.Name = "NotificationContainer"
+NotificationContainer.Size = UDim2.new(0, 340, 1, 0)
+NotificationContainer.Position = UDim2.new(1, -340, 0, 0)
+NotificationContainer.BackgroundTransparency = 1
+NotificationContainer.Parent = ScreenGui
 
--- Helper Functions
-local function mergeOptions(userOptions, defaultOptions)
-    local mergedOptions = table.clone(defaultOptions)
-    for key, value in pairs(userOptions) do
-        if type(value) == "table" and type(mergedOptions[key]) == "table" then
-            mergedOptions[key] = mergeOptions(value, mergedOptions[key])
-        else
-            mergedOptions[key] = value
-        end
-    end
-    return mergedOptions
-end
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+UIListLayout.Padding = UDim.new(0, 10)
+UIListLayout.Parent = NotificationContainer
 
-local function createGuiObject(className, properties)
-    local object = Instance.new(className)
-    for property, value in pairs(properties) do
-        object[property] = value
-    end
-    return object
-end
+local notificationQueue = {}
 
-local function setupNotificationHolder()
-    if notificationHolder then return notificationHolder end
+local function createNotification(title, message, notificationType)
+    local NotificationFrame = Instance.new("Frame")
+    NotificationFrame.Name = "NotificationFrame"
+    NotificationFrame.Size = UDim2.new(1, -20, 0, 0)
+    NotificationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    NotificationFrame.BorderSizePixel = 0
+    NotificationFrame.ClipsDescendants = true
+    NotificationFrame.Parent = NotificationContainer
 
-    local screenGui = createGuiObject("ScreenGui", {
-        Name = "EnhancedNotificationSystem",
-        Parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
-        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-        ResetOnSpawn = false
-    })
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 10)
+    Corner.Parent = NotificationFrame
 
-    notificationHolder = createGuiObject("Frame", {
-        Name = "NotificationHolder",
-        Parent = screenGui,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 1, 0)
-    })
+    local ColorBar = Instance.new("Frame")
+    ColorBar.Name = "ColorBar"
+    ColorBar.Size = UDim2.new(0, 8, 1, 0)
+    ColorBar.BackgroundColor3 = COLORS[notificationType] or COLORS.info
+    ColorBar.BorderSizePixel = 0
+    ColorBar.Parent = NotificationFrame
 
-    return notificationHolder
-end
+    local BarCorner = Instance.new("UICorner")
+    BarCorner.CornerRadius = UDim.new(0, 4)
+    BarCorner.Parent = ColorBar
 
-local function getTypeColor(notificationType)
-    return COLORS[string.upper(notificationType)] or COLORS.BACKGROUND
-end
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.Size = UDim2.new(1, -50, 0, 30)
+    Title.Position = UDim2.new(0, 20, 0, 5)
+    Title.Font = Enum.Font.GothamBold
+    Title.Text = title
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 18
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.BackgroundTransparency = 1
+    Title.Parent = NotificationFrame
 
-local function animateNotification(notification, direction)
-    local startPosition = notification.Position
-    local endPosition = direction == "in" 
-        and UDim2.new(startPosition.X.Scale, startPosition.X.Offset, startPosition.Y.Scale, startPosition.Y.Offset)
-        or UDim2.new(1.5, 0, startPosition.Y.Scale, startPosition.Y.Offset)
-    
-    notification.Position = direction == "in" and UDim2.new(1.5, 0, startPosition.Y.Scale, startPosition.Y.Offset) or startPosition
-    
-    local tween = TweenService:Create(notification, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-        Position = endPosition
-    })
-    tween:Play()
-    
-    return tween
-end
+    local Message = Instance.new("TextLabel")
+    Message.Name = "Message"
+    Message.Size = UDim2.new(1, -50, 0, 0)
+    Message.Position = UDim2.new(0, 20, 0, 35)
+    Message.Font = Enum.Font.Gotham
+    Message.Text = message
+    Message.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Message.TextSize = 14
+    Message.TextXAlignment = Enum.TextXAlignment.Left
+    Message.TextYAlignment = Enum.TextYAlignment.Top
+    Message.TextWrapped = true
+    Message.BackgroundTransparency = 1
+    Message.Parent = NotificationFrame
 
--- Main Functions
-function EnhancedNotificationSystem.createNotification(userOptions)
-    local options = mergeOptions(userOptions, DEFAULT_OPTIONS)
-    local holder = setupNotificationHolder()
-    
-    -- Manage maximum number of notifications
-    if #holder:GetChildren() >= options.MaxNotifications then
-        holder:FindFirstChild("Notification"):Destroy()
-    end
-    
-    local notification = createGuiObject("Frame", {
-        Name = "Notification",
-        Parent = holder,
-        BackgroundColor3 = getTypeColor(options.Type),
-        BorderSizePixel = 0,
-        Size = UDim2.new(options.Width, UDim.new(0, 0)),
-        Position = options.Position,
-        AnchorPoint = options.AnchorPoint
-    })
-    
-    local cornerRadius = createGuiObject("UICorner", {
-        CornerRadius = UDim.new(0, 8),
-        Parent = notification
-    })
-    
-    local contentPadding = createGuiObject("UIPadding", {
-        PaddingTop = UDim.new(0, 12),
-        PaddingBottom = UDim.new(0, 12),
-        PaddingLeft = UDim.new(0, 12),
-        PaddingRight = UDim.new(0, 12),
-        Parent = notification
-    })
-    
-    local titleLabel = createGuiObject("TextLabel", {
-        Name = "Title",
-        Parent = notification,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 24),
-        Font = FONT,
-        Text = options.Title,
-        TextColor3 = COLORS.TEXT,
-        TextSize = 18,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Center
-    })
-    
-    local contentLabel = createGuiObject("TextLabel", {
-        Name = "Content",
-        Parent = notification,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 0, 30),
-        Size = UDim2.new(1, 0, 0, 0),
-        Font = FONT,
-        Text = options.Content,
-        TextColor3 = COLORS.TEXT,
-        TextSize = 14,
-        TextWrapped = true,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextYAlignment = Enum.TextYAlignment.Top
-    })
-    
-    local buttonsHolder = createGuiObject("Frame", {
-        Name = "ButtonsHolder",
-        Parent = notification,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 1, -40),
-        Size = UDim2.new(1, 0, 0, 32),
-        BorderSizePixel = 0
-    })
-    
-    local buttonLayout = createGuiObject("UIListLayout", {
-        Parent = buttonsHolder,
-        FillDirection = Enum.FillDirection.Horizontal,
-        HorizontalAlignment = Enum.HorizontalAlignment.Right,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 8)
-    })
-    
-    for i, buttonInfo in ipairs(options.Buttons) do
-        local button = createGuiObject("TextButton", {
-            Name = "Button" .. i,
-            Parent = buttonsHolder,
-            BackgroundColor3 = COLORS.BUTTON,
-            Size = UDim2.new(0, 80, 1, 0),
-            Font = FONT,
-            Text = buttonInfo.Text,
-            TextColor3 = COLORS.TEXT,
-            TextSize = 14,
-            BorderSizePixel = 0
-        })
-        
-        createGuiObject("UICorner", {
-            CornerRadius = UDim.new(0, 4),
-            Parent = button
-        })
-        
-        button.MouseEnter:Connect(function()
-            TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = COLORS.BUTTON_HOVER}):Play()
-        end)
-        
-        button.MouseLeave:Connect(function()
-            TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = COLORS.BUTTON}):Play()
-        end)
-        
-        button.MouseButton1Click:Connect(function()
-            if buttonInfo.Callback then
-                buttonInfo.Callback()
-            end
-            animateNotification(notification, "out").Completed:Wait()
-            notification:Destroy()
-        end)
-    end
-    
-    -- Adjust content label size
-    local textSize = contentLabel.TextBounds
-    contentLabel.Size = UDim2.new(1, 0, 0, textSize.Y)
-    
-    -- Adjust notification size
-    notification.Size = UDim2.new(
-        options.Width.Scale, options.Width.Offset,
-        0, titleLabel.Size.Y.Offset + contentLabel.Size.Y.Offset + buttonsHolder.Size.Y.Offset + 24
+    local CloseButton = Instance.new("TextButton")
+    CloseButton.Name = "CloseButton"
+    CloseButton.Size = UDim2.new(0, 20, 0, 20)
+    CloseButton.Position = UDim2.new(1, -25, 0, 5)
+    CloseButton.Font = Enum.Font.GothamBold
+    CloseButton.Text = "×"
+    CloseButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+    CloseButton.TextSize = 20
+    CloseButton.BackgroundTransparency = 1
+    CloseButton.Parent = NotificationFrame
+
+    local ProgressBar = Instance.new("Frame")
+    ProgressBar.Name = "ProgressBar"
+    ProgressBar.Size = UDim2.new(1, 0, 0, 4)
+    ProgressBar.Position = UDim2.new(0, 0, 1, -4)
+    ProgressBar.BackgroundColor3 = COLORS[notificationType] or COLORS.info
+    ProgressBar.BorderSizePixel = 0
+    ProgressBar.Parent = NotificationFrame
+
+    -- Calculate message height
+    local textSize = game:GetService("TextService"):GetTextSize(
+        message,
+        14,
+        Enum.Font.Gotham,
+        Vector2.new(NotificationFrame.AbsoluteSize.X - 50, math.huge)
     )
-    
-    -- Animate notification
-    animateNotification(notification, "in")
-    
-    -- Auto-close timer
-    if options.Duration > 0 then
-        task.delay(options.Duration, function()
-            if notification.Parent then
-                animateNotification(notification, "out").Completed:Wait()
-                notification:Destroy()
-            end
+    local messageHeight = textSize.Y
+    local totalHeight = math.max(80, messageHeight + 50)
+
+    -- Resize notification
+    NotificationFrame.Size = UDim2.new(1, -20, 0, 0)
+    Message.Size = UDim2.new(1, -50, 0, messageHeight)
+
+    -- Animations
+    local tweenInfo = TweenInfo.new(TWEEN_TIME, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    local growTween = TweenService:Create(NotificationFrame, tweenInfo, {Size = UDim2.new(1, -20, 0, totalHeight)})
+    growTween:Play()
+
+    local progressTween = TweenService:Create(ProgressBar, TweenInfo.new(DISPLAY_TIME, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 0, 4)})
+    progressTween:Play()
+
+    -- Close button functionality
+    local function closeNotification()
+        local shrinkTween = TweenService:Create(NotificationFrame, tweenInfo, {Size = UDim2.new(1, -20, 0, 0)})
+        shrinkTween:Play()
+        shrinkTween.Completed:Connect(function()
+            NotificationFrame:Destroy()
         end)
     end
-    
-    return notification
+
+    CloseButton.MouseButton1Click:Connect(closeNotification)
+
+    -- Auto-close after display time
+    task.delay(DISPLAY_TIME, closeNotification)
+
+    return NotificationFrame
 end
 
--- Progress Bar Feature
-function EnhancedNotificationSystem.createProgressNotification(userOptions)
-    local options = mergeOptions(userOptions, DEFAULT_OPTIONS)
-    options.Buttons = {} -- Remove default buttons for progress notifications
+function NotificationUI.notify(title, message, notificationType)
+    notificationType = notificationType or "info"
     
-    local notification = EnhancedNotificationSystem.createNotification(options)
-    
-    local progressBar = createGuiObject("Frame", {
-        Name = "ProgressBar",
-        Parent = notification,
-        BackgroundColor3 = Color3.fromRGB(80, 80, 80),
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 0, 1, -8),
-        Size = UDim2.new(1, 0, 0, 4),
-        AnchorPoint = Vector2.new(0, 1)
-    })
-    
-    local progressFill = createGuiObject("Frame", {
-        Name = "ProgressFill",
-        Parent = progressBar,
-        BackgroundColor3 = COLORS.SUCCESS,
-        BorderSizePixel = 0,
-        Size = UDim2.new(0, 0, 1, 0)
-    })
-    
-    createGuiObject("UICorner", {
-        CornerRadius = UDim.new(0, 2),
-        Parent = progressBar
-    })
-    
-    createGuiObject("UICorner", {
-        CornerRadius = UDim.new(0, 2),
-        Parent = progressFill
-    })
-    
-    local function updateProgress(progress)
-        TweenService:Create(progressFill, TweenInfo.new(0.2), {Size = UDim2.new(progress, 0, 1, 0)}):Play()
+    -- Add to queue if max notifications reached
+    if #NotificationContainer:GetChildren() - 1 >= MAX_NOTIFICATIONS then
+        table.insert(notificationQueue, {title, message, notificationType})
+        return
     end
-    
-    return notification, updateProgress
+
+    local notification = createNotification(title, message, notificationType)
+
+    -- Check queue when a notification is removed
+    notification.AncestryChanged:Connect(function(_, parent)
+        if not parent and #notificationQueue > 0 then
+            local nextNotif = table.remove(notificationQueue, 1)
+            NotificationUI.notify(unpack(nextNotif))
+        end
+    end)
 end
 
-return EnhancedNotificationSystem
+-- Responsive design for mobile
+local function updateLayout()
+    local viewportSize = workspace.CurrentCamera.ViewportSize
+    if viewportSize.X < 600 then
+        NotificationContainer.Size = UDim2.new(1, 0, 1, 0)
+        NotificationContainer.Position = UDim2.new(0, 0, 0, 0)
+    else
+        NotificationContainer.Size = UDim2.new(0, 340, 1, 0)
+        NotificationContainer.Position = UDim2.new(1, -340, 0, 0)
+    end
+end
+
+updateLayout()
+UserInputService.WindowFocused:Connect(updateLayout)
+UserInputService.WindowFocusReleased:Connect(updateLayout)
+
+return NotificationUI
