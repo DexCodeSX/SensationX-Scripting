@@ -12,7 +12,8 @@ local COLORS = {
     BUTTON_HOVER = Color3.fromRGB(80, 80, 80),
     SUCCESS = Color3.fromRGB(46, 204, 113),
     WARNING = Color3.fromRGB(241, 196, 15),
-    ERROR = Color3.fromRGB(231, 76, 60)
+    ERROR = Color3.fromRGB(231, 76, 60),
+    INFO = Color3.fromRGB(52, 152, 219)
 }
 
 local DEFAULT_OPTIONS = {
