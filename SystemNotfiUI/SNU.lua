@@ -1,11 +1,10 @@
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 
 local EnhancedNotificationSystem = {}
 
 -- Constants
-local FONT = Font.new("rbxasset://fonts/families/GothamSSm.json")
+local FONT = Enum.Font.GothamSemibold
 local COLORS = {
     BACKGROUND = Color3.fromRGB(40, 40, 40),
     TEXT = Color3.fromRGB(255, 255, 255),
