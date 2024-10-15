@@ -261,28 +261,28 @@ UserInputService.WindowFocusReleased:Connect(updateLayout)
 function NotificationUI.success(title, message, options)
     options = options or {}
     options.type = "success"
-    options.icon = "rbxassetid://7733715400"
+    options.icon = "rbxassetid://105579861960290"
     NotificationUI.notify(title, message, options)
 end
 
 function NotificationUI.info(title, message, options)
     options = options or {}
     options.type = "info"
-    options.icon = "rbxassetid://7733742146"
+    options.icon = "rbxassetid://99644130295609"
     NotificationUI.notify(title, message, options)
 end
 
 function NotificationUI.warning(title, message, options)
     options = options or {}
     options.type = "warning"
-    options.icon = "rbxassetid://7733715400"
+    options.icon = "rbxassetid://122878607482605"
     NotificationUI.notify(title, message, options)
 end
 
 function NotificationUI.error(title, message, options)
     options = options or {}
     options.type = "error"
-    options.icon = "rbxassetid://7733658934"
+    options.icon = "rbxassetid://111618354985317"
     NotificationUI.notify(title, message, options)
 end
 
