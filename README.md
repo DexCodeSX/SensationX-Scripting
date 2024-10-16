@@ -1,33 +1,38 @@
-# 👨‍💻 Bisam - About Me
+# 🌟 SensationX - Roblox Exploit
 
-![Logo](https://u.cubeupload.com/SystemCoder/Picsart2408271529319.png)
+![SensationX Logo](https://u.cubeupload.com/SystemCoder/Picsart2408271529319.png)
 
-Hi! I'm Bisam. I make strong Roblox scripts with **Luau** and **JSON**. My work is clean and pro.
+## 👋 Hi, I'm Bisam
 
-[See my website](https://bisamaboutme.vercel.app/)
-[Branch **Blox** : Script](https://github.com/DexCodeSX/SensationX-Scripting/tree/Blox)
+I made **SensationX**, a cool Roblox exploit. It makes your Roblox games more fun!
 
-## 🔥 What I Do Best
+[🌐 My website](https://bisamaboutme.vercel.app/)
+[💻 SensationX Scripts](https://github.com/DexCodeSX/SensationX-Scripting/tree/Blox)
 
-- 🎮 **Roblox Exploits**: Use **Luau** and **JSON** for super strong scripts
-- 💪 **Good Code**: Write small but powerful scripts
-- 🖌️ **Nice UI**: Make good-looking UIs that work on phones
-- 🎬 **Smooth Moves**: Add cool animations to make things look nice
+## 🔥 What SensationX Can Do
 
-## 🔧 My Tools
+- 🎮 **Roblox Exploit**: Makes games easier and more fun
+- 🖥️ **Easy to Use**: Simple buttons and menus
+- ⚡ **Fast**: Works quick, doesn't slow your game
+- 🔄 **Gets Better**: I add new stuff all the time
 
-- 🌟 **Luau**: For best Roblox scripts
-- 📊 **JSON**: For organizing data well
-- 🌐 **HTML**: For making nice web pages
-- 🎭 **TweenService**: For smooth animations in UI
+## 🛠️ How I Made It
 
-## ⚡ Why I'm Good
+- 🌟 **Luau**: Special Roblox code language
+- 📊 **JSON**: Helps organize things
+- 🎨 **Cool Design**: Looks nice when you use it
 
-- 💻 **Small but Strong Code**: My scripts are short but very powerful
-- 🎨 **Cool UI**: My UIs look good and work well
-- 🚀 **Fast Scripts**: My code runs quick and doesn't break
-- 💡 **New Ideas**: I always try to make new, cool things in Roblox scripts
+## 💡 Why Use SensationX?
+
+1. **Strong**: Does a lot of cool things in games
+2. **Looks Good**: Nice buttons and menus
+3. **Always New**: I add new tricks often
+4. **Works Well**: Doesn't break your game
+
+## 🎮 Games It Works With
+
+I'm working hard to make SensationX work with lots of games. More games coming soon!
 
 ---
 
-*I want to make the best Roblox exploits with strong code and cool designs.*
+*SensationX: Make your Roblox games more fun!*
