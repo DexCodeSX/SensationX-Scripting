@@ -14,7 +14,7 @@ A sleek, customizable notification system for Roblox Exploit.
 ## Installation
 
 ```lua
-local NotificationUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/DexCodeSX/SensationX-Scripting/refs/heads/Blox/SystemNotfiUI/SNU.luau"))()
+local NotificationUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/DexCodeSX/SensationX-Scripting/refs/heads/Blox/SystemNotfiUI/SNU.lua"))()
 ```
 
 ## Usage
