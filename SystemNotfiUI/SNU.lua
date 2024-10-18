@@ -6,33 +6,36 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TextService = game:GetService("TextService")
 
-local TWEEN_TIME = 0.6
+local TWEEN_TIME = 0.5
 local DISPLAY_TIME = 5
 local MAX_NOTIFICATIONS = 5
-local NOTIFICATION_WIDTH = 340
-local NOTIFICATION_PADDING = 10
+local NOTIFICATION_WIDTH = 300
+local NOTIFICATION_PADDING = 15
 local NOTIFICATION_SPACING = 10
 local MAX_TITLE_LENGTH = 50
 local MAX_MESSAGE_LENGTH = 200
 
 local COLORS = {
-    success = Color3.fromRGB(46, 204, 113),
-    info = Color3.fromRGB(52, 152, 219),
-    warning = Color3.fromRGB(241, 196, 15),
-    error = Color3.fromRGB(231, 76, 60),
-    custom = Color3.fromRGB(155, 89, 182)
+    background = Color3.fromRGB(24, 24, 27),
+    text = Color3.fromRGB(255, 255, 255),
+    subtext = Color3.fromRGB(161, 161, 170),
+    success = Color3.fromRGB(34, 197, 94),
+    info = Color3.fromRGB(59, 130, 246),
+    warning = Color3.fromRGB(234, 179, 8),
+    error = Color3.fromRGB(239, 68, 68),
+    custom = Color3.fromRGB(168, 85, 247)
 }
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "NotificationUI"
+ScreenGui.Name = "ModernNotificationUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = gethui()
 
 local NotificationContainer = Instance.new("Frame")
 NotificationContainer.Name = "NotificationContainer"
-NotificationContainer.Size = UDim2.new(0, NOTIFICATION_WIDTH, 1, 0)
-NotificationContainer.Position = UDim2.new(1, -NOTIFICATION_WIDTH, 0, 0)
+NotificationContainer.Size = UDim2.new(0, NOTIFICATION_WIDTH, 1, -20)
+NotificationContainer.Position = UDim2.new(1, -NOTIFICATION_WIDTH - 20, 0, 10)
 NotificationContainer.BackgroundTransparency = 1
 NotificationContainer.Parent = ScreenGui
 
@@ -46,9 +49,7 @@ local notificationQueue = {}
 local currentNotifications = {}
 
 local function truncateString(str, maxLength)
-    if #str <= maxLength then
-        return str
-    end
+    if #str <= maxLength then return str end
     return str:sub(1, maxLength - 3) .. "..."
 end
 
@@ -57,71 +58,53 @@ local function createNotification(title, message, options)
     local duration = options.duration or DISPLAY_TIME
     local callback = options.callback
     local actions = options.actions or {}
-    local icon = options.icon
     
     title = truncateString(title, MAX_TITLE_LENGTH)
     message = truncateString(message, MAX_MESSAGE_LENGTH)
     
     local NotificationFrame = Instance.new("Frame")
     NotificationFrame.Name = "NotificationFrame"
-    NotificationFrame.Size = UDim2.new(1, -NOTIFICATION_PADDING * 2, 0, 0)
-    NotificationFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    NotificationFrame.Size = UDim2.new(1, 0, 0, 0)
+    NotificationFrame.BackgroundColor3 = COLORS.background
     NotificationFrame.BorderSizePixel = 0
     NotificationFrame.ClipsDescendants = true
     NotificationFrame.Parent = NotificationContainer
 
     local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 10)
+    Corner.CornerRadius = UDim.new(0, 8)
     Corner.Parent = NotificationFrame
 
-    local ColorBar = Instance.new("Frame")
-    ColorBar.Name = "ColorBar"
-    ColorBar.Size = UDim2.new(0, 8, 1, 0)
-    ColorBar.BackgroundColor3 = COLORS[notificationType] or COLORS.custom
-    ColorBar.BorderSizePixel = 0
-    ColorBar.Parent = NotificationFrame
-
-    local BarCorner = Instance.new("UICorner")
-    BarCorner.CornerRadius = UDim.new(0, 4)
-    BarCorner.Parent = ColorBar
+    local Stroke = Instance.new("UIStroke")
+    Stroke.Color = COLORS[notificationType]
+    Stroke.Thickness = 1
+    Stroke.Parent = NotificationFrame
 
     local ContentFrame = Instance.new("Frame")
     ContentFrame.Name = "ContentFrame"
-    ContentFrame.Size = UDim2.new(1, -8, 1, 0)
-    ContentFrame.Position = UDim2.new(0, 8, 0, 0)
+    ContentFrame.Size = UDim2.new(1, -NOTIFICATION_PADDING * 2, 1, -NOTIFICATION_PADDING * 2)
+    ContentFrame.Position = UDim2.new(0, NOTIFICATION_PADDING, 0, NOTIFICATION_PADDING)
     ContentFrame.BackgroundTransparency = 1
     ContentFrame.Parent = NotificationFrame
 
-    local IconImage
-    if icon then
-        IconImage = Instance.new("ImageLabel")
-        IconImage.Name = "IconImage"
-        IconImage.Size = UDim2.new(0, 24, 0, 24)
-        IconImage.Position = UDim2.new(0, 10, 0, 10)
-        IconImage.BackgroundTransparency = 1
-        IconImage.Image = icon
-        IconImage.Parent = ContentFrame
-    end
-
     local Title = Instance.new("TextLabel")
     Title.Name = "Title"
-    Title.Size = UDim2.new(1, icon and -74 or -50, 0, 30)
-    Title.Position = UDim2.new(0, icon and 44 or 20, 0, 5)
+    Title.Size = UDim2.new(1, -30, 0, 24)
+    Title.Position = UDim2.new(0, 0, 0, 0)
     Title.Font = Enum.Font.GothamBold
     Title.Text = title
-    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Title.TextSize = 18
+    Title.TextColor3 = COLORS.text
+    Title.TextSize = 16
     Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.BackgroundTransparency = 1
     Title.Parent = ContentFrame
 
     local Message = Instance.new("TextLabel")
     Message.Name = "Message"
-    Message.Size = UDim2.new(1, -40, 0, 0)
-    Message.Position = UDim2.new(0, 20, 0, 35)
+    Message.Size = UDim2.new(1, 0, 0, 0)
+    Message.Position = UDim2.new(0, 0, 0, 28)
     Message.Font = Enum.Font.Gotham
     Message.Text = message
-    Message.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Message.TextColor3 = COLORS.subtext
     Message.TextSize = 14
     Message.TextXAlignment = Enum.TextXAlignment.Left
     Message.TextYAlignment = Enum.TextYAlignment.Top
@@ -131,20 +114,20 @@ local function createNotification(title, message, options)
 
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "CloseButton"
-    CloseButton.Size = UDim2.new(0, 20, 0, 20)
-    CloseButton.Position = UDim2.new(1, -25, 0, 5)
+    CloseButton.Size = UDim2.new(0, 24, 0, 24)
+    CloseButton.Position = UDim2.new(1, -24, 0, 0)
     CloseButton.Font = Enum.Font.GothamBold
     CloseButton.Text = "×"
-    CloseButton.TextColor3 = Color3.fromRGB(200, 200, 200)
-    CloseButton.TextSize = 20
+    CloseButton.TextColor3 = COLORS.subtext
+    CloseButton.TextSize = 18
     CloseButton.BackgroundTransparency = 1
     CloseButton.Parent = ContentFrame
 
     local ProgressBar = Instance.new("Frame")
     ProgressBar.Name = "ProgressBar"
-    ProgressBar.Size = UDim2.new(1, 0, 0, 4)
-    ProgressBar.Position = UDim2.new(0, 0, 1, -4)
-    ProgressBar.BackgroundColor3 = COLORS[notificationType] or COLORS.custom
+    ProgressBar.Size = UDim2.new(1, 0, 0, 2)
+    ProgressBar.Position = UDim2.new(0, 0, 1, -2)
+    ProgressBar.BackgroundColor3 = COLORS[notificationType]
     ProgressBar.BorderSizePixel = 0
     ProgressBar.Parent = NotificationFrame
 
@@ -152,18 +135,18 @@ local function createNotification(title, message, options)
         message,
         14,
         Enum.Font.Gotham,
-        Vector2.new(ContentFrame.AbsoluteSize.X - 40, math.huge)
+        Vector2.new(ContentFrame.AbsoluteSize.X, math.huge)
     )
     local messageHeight = textSize.Y
-    local totalHeight = math.max(80, messageHeight + 50)
+    local totalHeight = math.max(80, messageHeight + 60)
 
     if #actions > 0 then
-        local buttonHeight = 30
-        local buttonSpacing = 5
+        local buttonHeight = 32
+        local buttonSpacing = 8
         local buttonsContainer = Instance.new("Frame")
         buttonsContainer.Name = "ButtonsContainer"
-        buttonsContainer.Size = UDim2.new(1, -40, 0, buttonHeight)
-        buttonsContainer.Position = UDim2.new(0, 20, 0, totalHeight)
+        buttonsContainer.Size = UDim2.new(1, 0, 0, buttonHeight)
+        buttonsContainer.Position = UDim2.new(0, 0, 0, totalHeight - buttonHeight - NOTIFICATION_PADDING)
         buttonsContainer.BackgroundTransparency = 1
         buttonsContainer.Parent = ContentFrame
 
@@ -176,13 +159,14 @@ local function createNotification(title, message, options)
             button.Position = UDim2.new(0, (i - 1) * (buttonWidth + buttonSpacing), 0, 0)
             button.Font = Enum.Font.Gotham
             button.Text = action.text
-            button.TextColor3 = Color3.fromRGB(255, 255, 255)
+            button.TextColor3 = COLORS.text
             button.TextSize = 14
-            button.BackgroundColor3 = COLORS[notificationType] or COLORS.custom
+            button.BackgroundColor3 = COLORS[notificationType]
+            button.BackgroundTransparency = 0.8
             button.Parent = buttonsContainer
 
             local buttonCorner = Instance.new("UICorner")
-            buttonCorner.CornerRadius = UDim.new(0, 5)
+            buttonCorner.CornerRadius = UDim.new(0, 4)
             buttonCorner.Parent = button
 
             button.MouseButton1Click:Connect(function()
@@ -195,18 +179,18 @@ local function createNotification(title, message, options)
         totalHeight = totalHeight + buttonHeight + buttonSpacing
     end
 
-    NotificationFrame.Size = UDim2.new(1, -NOTIFICATION_PADDING * 2, 0, 0)
-    Message.Size = UDim2.new(1, -40, 0, messageHeight)
+    NotificationFrame.Size = UDim2.new(1, 0, 0, 0)
+    Message.Size = UDim2.new(1, 0, 0, messageHeight)
 
     local tweenInfo = TweenInfo.new(TWEEN_TIME, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-    local growTween = TweenService:Create(NotificationFrame, tweenInfo, {Size = UDim2.new(1, -NOTIFICATION_PADDING * 2, 0, totalHeight)})
+    local growTween = TweenService:Create(NotificationFrame, tweenInfo, {Size = UDim2.new(1, 0, 0, totalHeight)})
     growTween:Play()
 
-    local progressTween = TweenService:Create(ProgressBar, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 0, 4)})
+    local progressTween = TweenService:Create(ProgressBar, TweenInfo.new(duration, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 0, 2)})
     progressTween:Play()
 
     local function closeNotification()
-        local shrinkTween = TweenService:Create(NotificationFrame, tweenInfo, {Size = UDim2.new(1, -NOTIFICATION_PADDING * 2, 0, 0)})
+        local shrinkTween = TweenService:Create(NotificationFrame, tweenInfo, {Size = UDim2.new(1, 0, 0, 0)})
         shrinkTween:Play()
         shrinkTween.Completed:Connect(function()
             NotificationFrame:Destroy()
@@ -246,11 +230,11 @@ end
 local function updateLayout()
     local viewportSize = workspace.CurrentCamera.ViewportSize
     if viewportSize.X < 600 then
-        NotificationContainer.Size = UDim2.new(1, 0, 1, 0)
-        NotificationContainer.Position = UDim2.new(0, 0, 0, 0)
+        NotificationContainer.Size = UDim2.new(1, -20, 1, -20)
+        NotificationContainer.Position = UDim2.new(0, 10, 0, 10)
     else
-        NotificationContainer.Size = UDim2.new(0, NOTIFICATION_WIDTH, 1, 0)
-        NotificationContainer.Position = UDim2.new(1, -NOTIFICATION_WIDTH, 0, 0)
+        NotificationContainer.Size = UDim2.new(0, NOTIFICATION_WIDTH, 1, -20)
+        NotificationContainer.Position = UDim2.new(1, -NOTIFICATION_WIDTH - 20, 0, 10)
     end
 end
 
@@ -261,28 +245,30 @@ UserInputService.WindowFocusReleased:Connect(updateLayout)
 function NotificationUI.success(title, message, options)
     options = options or {}
     options.type = "success"
-    options.icon = "rbxassetid://105579861960290"
     NotificationUI.notify(title, message, options)
 end
 
 function NotificationUI.info(title, message, options)
     options = options or {}
     options.type = "info"
-    options.icon = "rbxassetid://99644130295609"
     NotificationUI.notify(title, message, options)
 end
 
 function NotificationUI.warning(title, message, options)
     options = options or {}
     options.type = "warning"
-    options.icon = "rbxassetid://122878607482605"
     NotificationUI.notify(title, message, options)
 end
 
 function NotificationUI.error(title, message, options)
     options = options or {}
     options.type = "error"
-    options.icon = "rbxassetid://111618354985317"
+    NotificationUI.notify(title, message, options)
+end
+
+function NotificationUI.custom(title, message, options)
+    options = options or {}
+    options.type = "custom"
     NotificationUI.notify(title, message, options)
 end
 
