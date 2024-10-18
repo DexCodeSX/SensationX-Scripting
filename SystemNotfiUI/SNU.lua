@@ -14,18 +14,18 @@ local MAX_TITLE_LENGTH = 50
 local MAX_MESSAGE_LENGTH = 200
 
 local COLORS = {
-    background = Color3.fromRGB(18, 18, 18),
+    background = Color3.fromRGB(24, 24, 27),
     text = Color3.fromRGB(255, 255, 255),
-    subtext = Color3.fromRGB(179, 179, 179),
-    success = Color3.fromRGB(0, 200, 83),
-    info = Color3.fromRGB(33, 150, 243),
-    warning = Color3.fromRGB(255, 152, 0),
-    error = Color3.fromRGB(244, 67, 54),
-    custom = Color3.fromRGB(156, 39, 176)
+    subtext = Color3.fromRGB(161, 161, 170),
+    success = Color3.fromRGB(34, 197, 94),
+    info = Color3.fromRGB(59, 130, 246),
+    warning = Color3.fromRGB(234, 179, 8),
+    error = Color3.fromRGB(239, 68, 68),
+    custom = Color3.fromRGB(168, 85, 247)
 }
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ModernNotificationUI"
+ScreenGui.Name = "ModernPortfolioNotificationUI"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = gethui()
