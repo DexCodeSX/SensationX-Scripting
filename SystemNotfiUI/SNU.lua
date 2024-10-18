@@ -2,28 +2,26 @@ local NotificationUI = {}
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local TextService = game:GetService("TextService")
 
-local TWEEN_TIME = 0.5
+local TWEEN_TIME = 0.3
 local DISPLAY_TIME = 5
 local MAX_NOTIFICATIONS = 5
-local NOTIFICATION_WIDTH = 300
-local NOTIFICATION_PADDING = 15
-local NOTIFICATION_SPACING = 10
+local NOTIFICATION_WIDTH = 320
+local NOTIFICATION_PADDING = 16
+local NOTIFICATION_SPACING = 8
 local MAX_TITLE_LENGTH = 50
 local MAX_MESSAGE_LENGTH = 200
 
 local COLORS = {
-    background = Color3.fromRGB(24, 24, 27),
+    background = Color3.fromRGB(18, 18, 18),
     text = Color3.fromRGB(255, 255, 255),
-    subtext = Color3.fromRGB(161, 161, 170),
-    success = Color3.fromRGB(34, 197, 94),
-    info = Color3.fromRGB(59, 130, 246),
-    warning = Color3.fromRGB(234, 179, 8),
-    error = Color3.fromRGB(239, 68, 68),
-    custom = Color3.fromRGB(168, 85, 247)
+    subtext = Color3.fromRGB(179, 179, 179),
+    success = Color3.fromRGB(0, 200, 83),
+    info = Color3.fromRGB(33, 150, 243),
+    warning = Color3.fromRGB(255, 152, 0),
+    error = Color3.fromRGB(244, 67, 54),
+    custom = Color3.fromRGB(156, 39, 176)
 }
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -49,8 +47,7 @@ local notificationQueue = {}
 local currentNotifications = {}
 
 local function truncateString(str, maxLength)
-    if #str <= maxLength then return str end
-    return str:sub(1, maxLength - 3) .. "..."
+    return #str <= maxLength and str or (str:sub(1, maxLength - 3) .. "...")
 end
 
 local function createNotification(title, message, options)
@@ -157,7 +154,7 @@ local function createNotification(title, message, options)
             button.Name = "ActionButton" .. i
             button.Size = UDim2.new(0, buttonWidth, 1, 0)
             button.Position = UDim2.new(0, (i - 1) * (buttonWidth + buttonSpacing), 0, 0)
-            button.Font = Enum.Font.Gotham
+            button.Font = Enum.Font.GothamSemibold
             button.Text = action.text
             button.TextColor3 = COLORS.text
             button.TextSize = 14
@@ -173,6 +170,21 @@ local function createNotification(title, message, options)
                 if action.callback then
                     action.callback()
                 end
+                NotificationFrame:Destroy()
+                table.remove(currentNotifications, table.find(currentNotifications, NotificationFrame))
+            end)
+
+            local buttonStroke = Instance.new("UIStroke")
+            buttonStroke.Color = COLORS[notificationType]
+            buttonStroke.Thickness = 1
+            buttonStroke.Parent = button
+
+            button.MouseEnter:Connect(function()
+                TweenService:Create(button, TweenInfo.new(0.1), {BackgroundTransparency = 0.6}):Play()
+            end)
+
+            button.MouseLeave:Connect(function()
+                TweenService:Create(button, TweenInfo.new(0.1), {BackgroundTransparency = 0.8}):Play()
             end)
         end
 
@@ -289,8 +301,7 @@ function NotificationUI.clearAll()
     notificationQueue = {}
 end
 
-local dragStart
-local startPos
+local dragStart, startPos
 
 local function updateDrag(input)
     local delta = input.Position - dragStart
