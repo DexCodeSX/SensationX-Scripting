@@ -54,7 +54,6 @@ local function createNotification(title, message, options)
     local notificationType = options.type or "info"
     local duration = options.duration or DISPLAY_TIME
     local callback = options.callback
-    local actions = options.actions or {}
     
     title = truncateString(title, MAX_TITLE_LENGTH)
     message = truncateString(message, MAX_MESSAGE_LENGTH)
@@ -85,7 +84,7 @@ local function createNotification(title, message, options)
 
     local Title = Instance.new("TextLabel")
     Title.Name = "Title"
-    Title.Size = UDim2.new(1, -30, 0, 24)
+    Title.Size = UDim2.new(1, 0, 0, 24)
     Title.Position = UDim2.new(0, 0, 0, 0)
     Title.Font = Enum.Font.GothamBold
     Title.Text = title
@@ -109,17 +108,6 @@ local function createNotification(title, message, options)
     Message.BackgroundTransparency = 1
     Message.Parent = ContentFrame
 
-    local CloseButton = Instance.new("TextButton")
-    CloseButton.Name = "CloseButton"
-    CloseButton.Size = UDim2.new(0, 24, 0, 24)
-    CloseButton.Position = UDim2.new(1, -24, 0, 0)
-    CloseButton.Font = Enum.Font.GothamBold
-    CloseButton.Text = "×"
-    CloseButton.TextColor3 = COLORS.subtext
-    CloseButton.TextSize = 18
-    CloseButton.BackgroundTransparency = 1
-    CloseButton.Parent = ContentFrame
-
     local ProgressBar = Instance.new("Frame")
     ProgressBar.Name = "ProgressBar"
     ProgressBar.Size = UDim2.new(1, 0, 0, 2)
@@ -136,60 +124,6 @@ local function createNotification(title, message, options)
     )
     local messageHeight = textSize.Y
     local totalHeight = math.max(80, messageHeight + 60)
-
-    if #actions > 0 then
-        local buttonHeight = 32
-        local buttonSpacing = 8
-        local buttonsContainer = Instance.new("Frame")
-        buttonsContainer.Name = "ButtonsContainer"
-        buttonsContainer.Size = UDim2.new(1, 0, 0, buttonHeight)
-        buttonsContainer.Position = UDim2.new(0, 0, 0, totalHeight - buttonHeight - NOTIFICATION_PADDING)
-        buttonsContainer.BackgroundTransparency = 1
-        buttonsContainer.Parent = ContentFrame
-
-        local buttonWidth = (buttonsContainer.AbsoluteSize.X - (buttonSpacing * (#actions - 1))) / #actions
-
-        for i, action in ipairs(actions) do
-            local button = Instance.new("TextButton")
-            button.Name = "ActionButton" .. i
-            button.Size = UDim2.new(0, buttonWidth, 1, 0)
-            button.Position = UDim2.new(0, (i - 1) * (buttonWidth + buttonSpacing), 0, 0)
-            button.Font = Enum.Font.GothamSemibold
-            button.Text = action.text
-            button.TextColor3 = COLORS.text
-            button.TextSize = 14
-            button.BackgroundColor3 = COLORS[notificationType]
-            button.BackgroundTransparency = 0.8
-            button.Parent = buttonsContainer
-
-            local buttonCorner = Instance.new("UICorner")
-            buttonCorner.CornerRadius = UDim.new(0, 4)
-            buttonCorner.Parent = button
-
-            local buttonStroke = Instance.new("UIStroke")
-            buttonStroke.Color = COLORS[notificationType]
-            buttonStroke.Thickness = 1
-            buttonStroke.Parent = button
-
-            button.MouseEnter:Connect(function()
-                TweenService:Create(button, TweenInfo.new(0.1), {BackgroundTransparency = 0.6}):Play()
-            end)
-
-            button.MouseLeave:Connect(function()
-                TweenService:Create(button, TweenInfo.new(0.1), {BackgroundTransparency = 0.8}):Play()
-            end)
-
-            button.MouseButton1Click:Connect(function()
-                if action.callback then
-                    action.callback()
-                end
-                NotificationFrame:Destroy()
-                table.remove(currentNotifications, table.find(currentNotifications, NotificationFrame))
-            end)
-        end
-
-        totalHeight = totalHeight + buttonHeight + buttonSpacing
-    end
 
     NotificationFrame.Size = UDim2.new(1, 0, 0, 0)
     Message.Size = UDim2.new(1, 0, 0, messageHeight)
@@ -212,8 +146,6 @@ local function createNotification(title, message, options)
             end
         end)
     end
-
-    CloseButton.MouseButton1Click:Connect(closeNotification)
 
     task.delay(duration, closeNotification)
 
