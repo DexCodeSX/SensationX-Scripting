@@ -3,6 +3,7 @@ local NotificationUI = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local TextService = game:GetService("TextService")
+local RunService = game:GetService("RunService")
 
 local TWEEN_TIME = 0.3
 local DISPLAY_TIME = 5
@@ -12,6 +13,7 @@ local NOTIFICATION_PADDING = 16
 local NOTIFICATION_SPACING = 8
 local MAX_TITLE_LENGTH = 50
 local MAX_MESSAGE_LENGTH = 200
+local SWIPE_THRESHOLD = 100
 
 local COLORS = {
     background = Color3.fromRGB(18, 18, 18),
@@ -148,6 +150,42 @@ local function createNotification(title, message, options)
     end
 
     task.delay(duration, closeNotification)
+
+    -- Swipe to dismiss
+    local startX
+    local connection
+    NotificationFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            startX = input.Position.X
+            local startPos = NotificationFrame.Position
+
+            connection = RunService.RenderStepped:Connect(function()
+                local delta = UserInputService:GetMouseLocation().X - startX
+                NotificationFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta, startPos.Y.Scale, startPos.Y.Offset)
+            end)
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    if connection then
+                        connection:Disconnect()
+                    end
+
+                    local endX = input.Position.X
+                    local delta = endX - startX
+
+                    if math.abs(delta) > SWIPE_THRESHOLD then
+                        local direction = delta > 0 and 1 or -1
+                        local dismissTween = TweenService:Create(NotificationFrame, tweenInfo, {Position = UDim2.new(direction, 0, NotificationFrame.Position.Y.Scale, NotificationFrame.Position.Y.Offset)})
+                        dismissTween:Play()
+                        dismissTween.Completed:Connect(closeNotification)
+                    else
+                        local resetTween = TweenService:Create(NotificationFrame, tweenInfo, {Position = startPos})
+                        resetTween:Play()
+                    end
+                end
+            end)
+        end
+    end)
 
     return NotificationFrame
 end
