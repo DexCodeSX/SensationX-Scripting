@@ -11,7 +11,7 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local FONT = Enum.Font.GothamBold
 local TEXT_SIZE = 14
 local TWEEN_TIME = 0.5
-local NOTIFICATION_LIFETIME = 5
+local DEFAULT_DURATION = 5
 
 function TiepUI.new()
     local self = setmetatable({}, TiepUI)
@@ -48,7 +48,7 @@ function TiepUI:updateLayout()
     end
 end
 
-function TiepUI:createNotification(title, message, type)
+function TiepUI:createNotification(title, message, type, duration)
     local frame = Instance.new("Frame")
     frame.Name = "Notification"
     frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
@@ -115,16 +115,27 @@ function TiepUI:createNotification(title, message, type)
     colorBar.Position = UDim2.new(0, -8, 0, 0)
     colorBar.Parent = frame
 
+    local durationBar = Instance.new("Frame")
+    durationBar.Name = "DurationBar"
+    durationBar.BackgroundColor3 = typeColor
+    durationBar.BorderSizePixel = 0
+    durationBar.Size = UDim2.new(1, 0, 0, 2)
+    durationBar.Position = UDim2.new(0, 0, 1, 2)
+    durationBar.Parent = frame
+
     local notification = {
         Frame = frame,
-        CreatedAt = tick()
+        DurationBar = durationBar,
+        CreatedAt = tick(),
+        Duration = duration or DEFAULT_DURATION
     }
     table.insert(self.notifications, 1, notification)
     self:updateNotificationPositions()
 
     spawn(function()
         TweenService:Create(frame, TweenInfo.new(TWEEN_TIME, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, 0, 1, -frame.AbsoluteSize.Y)}):Play()
-        wait(NOTIFICATION_LIFETIME)
+        TweenService:Create(durationBar, TweenInfo.new(notification.Duration, Enum.EasingStyle.Linear), {Size = UDim2.new(0, 0, 0, 2)}):Play()
+        wait(notification.Duration)
         self:removeNotification(notification)
     end)
 end
@@ -151,20 +162,20 @@ function TiepUI:updateNotificationPositions()
     end
 end
 
-function TiepUI:success(title, message)
-    self:createNotification(title, message, "success")
+function TiepUI:success(title, message, duration)
+    self:createNotification(title, message, "success", duration)
 end
 
-function TiepUI:error(title, message)
-    self:createNotification(title, message, "error")
+function TiepUI:error(title, message, duration)
+    self:createNotification(title, message, "error", duration)
 end
 
-function TiepUI:warning(title, message)
-    self:createNotification(title, message, "warning")
+function TiepUI:warning(title, message, duration)
+    self:createNotification(title, message, "warning", duration)
 end
 
-function TiepUI:info(title, message)
-    self:createNotification(title, message, "info")
+function TiepUI:info(title, message, duration)
+    self:createNotification(title, message, "info", duration)
 end
 
 function TiepUI:debug(...)
