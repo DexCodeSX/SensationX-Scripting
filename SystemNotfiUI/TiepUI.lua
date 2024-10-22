@@ -8,9 +8,9 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local FONTS = {
-    REGULAR = Enum.Font.Gotham,
-    BOLD = Enum.Font.GothamBold,
-    LIGHT = Enum.Font.GothamLight
+    REGULAR = Font.new("rbxasset://fonts/families/GothamSSm.json"),
+    BOLD = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
+    LIGHT = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Light)
 }
 
 local COLORS = {
