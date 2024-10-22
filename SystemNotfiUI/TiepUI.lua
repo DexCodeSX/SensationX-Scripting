@@ -1,162 +1,129 @@
 local TiepUI = {}
+TiepUI.__index = TiepUI
 
--- Services
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
-local RunService = game:GetService("RunService")
 
--- Constants
 local FONT = Enum.Font.GothamBold
-local TEXT_SIZE = 14
-local PADDING = 10
-local CORNER_RADIUS = 8
-local TWEEN_TIME = 0.5
-local MAX_NOTIFICATIONS = 5
+local NOTIFICATION_DURATION = 5
+local TWEEN_DURATION = 0.5
 
--- Helper Functions
-local function lerp(a, b, t)
-    return a + (b - a) * t
-end
-
-local function createFrame(name, parent)
-    local frame = Instance.new("Frame")
-    frame.Name = name
-    frame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
-    frame.BorderSizePixel = 0
-    frame.Parent = parent
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, CORNER_RADIUS)
-    corner.Parent = frame
-    
-    return frame
-end
-
-local function createText(name, parent)
-    local text = Instance.new("TextLabel")
-    text.Name = name
-    text.BackgroundTransparency = 1
-    text.Font = FONT
-    text.TextColor3 = Color3.new(1, 1, 1)
-    text.TextSize = TEXT_SIZE
-    text.TextXAlignment = Enum.TextXAlignment.Left
-    text.TextYAlignment = Enum.TextYAlignment.Top
-    text.Parent = parent
-    
-    return text
-end
-
--- TiepUI Implementation
 function TiepUI.new()
-    local self = setmetatable({}, {__index = TiepUI})
-    
+    local self = setmetatable({}, TiepUI)
+    self.notifications = {}
+    self:createUI()
+    return self
+end
+
+function TiepUI:createUI()
     self.screenGui = Instance.new("ScreenGui")
     self.screenGui.Name = "TiepUI"
     self.screenGui.ResetOnSpawn = false
     self.screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
-    self.container = createFrame("Container", self.screenGui)
-    self.container.Position = UDim2.new(1, -20, 1, -20)
-    self.container.AnchorPoint = Vector2.new(1, 1)
-    self.container.AutomaticSize = Enum.AutomaticSize.Y
+    self.notificationContainer = Instance.new("Frame")
+    self.notificationContainer.Name = "NotificationContainer"
+    self.notificationContainer.AnchorPoint = Vector2.new(1, 1)
+    self.notificationContainer.BackgroundTransparency = 1
+    self.notificationContainer.Position = UDim2.new(1, -20, 1, -20)
+    self.notificationContainer.Size = UDim2.new(0, 300, 1, -40)
+    self.notificationContainer.Parent = self.screenGui
     
-    self.notificationList = createFrame("NotificationList", self.container)
-    self.notificationList.Size = UDim2.new(1, 0, 0, 0)
-    self.notificationList.AutomaticSize = Enum.AutomaticSize.Y
+    local uiListLayout = Instance.new("UIListLayout")
+    uiListLayout.Padding = UDim.new(0, 10)
+    uiListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    uiListLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+    uiListLayout.Parent = self.notificationContainer
     
-    local listLayout = Instance.new("UIListLayout")
-    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    listLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-    listLayout.Padding = UDim.new(0, PADDING)
-    listLayout.Parent = self.notificationList
-    
-    self.notifications = {}
-    self.debugMode = false
-    
-    self:updateScale()
-    self:setupConnections()
-    
-    return self
+    self.screenGui.Parent = gethui()
 end
 
-function TiepUI:updateScale()
-    local viewportSize = workspace.CurrentCamera.ViewportSize
-    local scale = math.min(viewportSize.X, viewportSize.Y) / 1080
-    self.container.Size = UDim2.new(0, 300 * scale, 0, 0)
-    self.screenGui.Parent = (RunService:IsStudio() and Players.LocalPlayer:FindFirstChildOfClass("PlayerGui")) or game:GetService("CoreGui")
-end
-
-function TiepUI:setupConnections()
-    workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
-        self:updateScale()
-    end)
-end
-
-function TiepUI:notify(title, message, duration, type)
-    if #self.notifications >= MAX_NOTIFICATIONS then
-        self:removeNotification(self.notifications[1])
+function TiepUI:notify(title, message, notificationType)
+    local notification = Instance.new("Frame")
+    notification.Name = "Notification"
+    notification.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    notification.BorderSizePixel = 0
+    notification.Size = UDim2.new(1, 0, 0, 0)
+    notification.ClipsDescendants = true
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = notification
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "Title"
+    titleLabel.Font = FONT
+    titleLabel.Text = title
+    titleLabel.TextColor3 = Color3.new(1, 1, 1)
+    titleLabel.TextSize = 18
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Position = UDim2.new(0, 15, 0, 10)
+    titleLabel.Size = UDim2.new(1, -30, 0, 20)
+    titleLabel.Parent = notification
+    
+    local messageLabel = Instance.new("TextLabel")
+    messageLabel.Name = "Message"
+    messageLabel.Font = FONT
+    messageLabel.Text = message
+    messageLabel.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+    messageLabel.TextSize = 14
+    messageLabel.TextXAlignment = Enum.TextXAlignment.Left
+    messageLabel.TextYAlignment = Enum.TextYAlignment.Top
+    messageLabel.TextWrapped = true
+    messageLabel.BackgroundTransparency = 1
+    messageLabel.Position = UDim2.new(0, 15, 0, 35)
+    messageLabel.Size = UDim2.new(1, -30, 1, -45)
+    messageLabel.Parent = notification
+    
+    local typeColor = Color3.fromRGB(0, 170, 255)
+    if notificationType == "success" then
+        typeColor = Color3.fromRGB(0, 255, 128)
+    elseif notificationType == "error" then
+        typeColor = Color3.fromRGB(255, 64, 64)
+    elseif notificationType == "warning" then
+        typeColor = Color3.fromRGB(255, 170, 0)
     end
     
-    local notification = createFrame("Notification", self.notificationList)
-    notification.Size = UDim2.new(1, 0, 0, 0)
-    notification.AutomaticSize = Enum.AutomaticSize.Y
+    local colorBar = Instance.new("Frame")
+    colorBar.Name = "ColorBar"
+    colorBar.BackgroundColor3 = typeColor
+    colorBar.BorderSizePixel = 0
+    colorBar.Position = UDim2.new(0, 0, 0, 0)
+    colorBar.Size = UDim2.new(0, 5, 1, 0)
+    colorBar.Parent = notification
     
-    local content = createFrame("Content", notification)
-    content.Size = UDim2.new(1, -PADDING * 2, 0, 0)
-    content.Position = UDim2.new(0, PADDING, 0, PADDING)
-    content.AutomaticSize = Enum.AutomaticSize.Y
+    local cornerBar = Instance.new("UICorner")
+    cornerBar.CornerRadius = UDim.new(0, 8)
+    cornerBar.Parent = colorBar
     
-    local titleLabel = createText("Title", content)
-    titleLabel.Text = title
-    titleLabel.TextSize = TEXT_SIZE * 1.2
-    titleLabel.Size = UDim2.new(1, 0, 0, TEXT_SIZE * 1.2)
+    notification.Parent = self.notificationContainer
     
-    local messageLabel = createText("Message", content)
-    messageLabel.Text = message
-    messageLabel.Position = UDim2.new(0, 0, 0, TEXT_SIZE * 1.5)
-    messageLabel.Size = UDim2.new(1, 0, 0, 0)
-    messageLabel.AutomaticSize = Enum.AutomaticSize.Y
-    messageLabel.TextWrapped = true
+    local textSize = game:GetService("TextService"):GetTextSize(message, 14, FONT, Vector2.new(270, 1000))
+    local targetSize = UDim2.new(1, 0, 0, math.min(textSize.Y + 60, 200))
     
-    local typeColor = type == "error" and Color3.new(1, 0.2, 0.2) or
-                      type == "warning" and Color3.new(1, 0.8, 0.2) or
-                      Color3.new(0.2, 0.8, 0.2)
-    
-    local accent = Instance.new("Frame")
-    accent.Name = "Accent"
-    accent.BackgroundColor3 = typeColor
-    accent.BorderSizePixel = 0
-    accent.Size = UDim2.new(0, 4, 1, 0)
-    accent.Parent = notification
+    TweenService:Create(notification, TweenInfo.new(TWEEN_DURATION, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = targetSize}):Play()
     
     table.insert(self.notifications, notification)
     self:updateNotificationPositions()
     
-    notification.Position = UDim2.new(1, 0, 1, 0)
-    notification.AnchorPoint = Vector2.new(1, 1)
-    
-    local targetPosition = UDim2.new(0, 0, 1, 0)
-    local tweenInfo = TweenInfo.new(TWEEN_TIME, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(notification, tweenInfo, {Position = targetPosition})
-    tween:Play()
-    
-    delay(duration or 5, function()
+    task.delay(NOTIFICATION_DURATION, function()
         self:removeNotification(notification)
     end)
 end
 
 function TiepUI:removeNotification(notification)
-    local index = table.find(self.notifications, notification)
-    if index then
-        table.remove(self.notifications, index)
+    for i, v in ipairs(self.notifications) do
+        if v == notification then
+            table.remove(self.notifications, i)
+            break
+        end
     end
     
-    local tweenInfo = TweenInfo.new(TWEEN_TIME, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
-    local tween = TweenService:Create(notification, tweenInfo, {Position = UDim2.new(1, 0, 1, 0)})
-    tween:Play()
-    
-    tween.Completed:Connect(function()
+    local fadeTween = TweenService:Create(notification, TweenInfo.new(TWEEN_DURATION, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 1})
+    fadeTween:Play()
+    fadeTween.Completed:Connect(function()
         notification:Destroy()
         self:updateNotificationPositions()
     end)
@@ -164,54 +131,41 @@ end
 
 function TiepUI:updateNotificationPositions()
     for i, notification in ipairs(self.notifications) do
-        local targetPosition = UDim2.new(0, 0, 1, -((notification.AbsoluteSize.Y + PADDING) * (i - 1)))
-        local tweenInfo = TweenInfo.new(TWEEN_TIME, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-        local tween = TweenService:Create(notification, tweenInfo, {Position = targetPosition})
-        tween:Play()
+        local targetPosition = UDim2.new(0, 0, 1, -i * (notification.AbsoluteSize.Y + 10))
+        TweenService:Create(notification, TweenInfo.new(TWEEN_DURATION, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = targetPosition}):Play()
     end
 end
 
-function TiepUI:setDebugMode(enabled)
-    self.debugMode = enabled
-end
-
-function TiepUI:debug(message)
-    if self.debugMode then
-        self:notify("Debug", message, 10, "warning")
-        print("[TiepUI Debug]", message)
+function TiepUI:debugExploit(callback)
+    local success, result = pcall(callback)
+    if not success then
+        self:notify("Debug Error", "An error occurred while debugging: " .. tostring(result), "error")
+    else
+        self:notify("Debug Success", "Debugging completed successfully.", "success")
     end
-end
-
-function TiepUI:handleExploitError(err)
-    local errorMessage = tostring(err)
-    self:notify("Exploit Error", errorMessage, 10, "error")
-    self:debug("Exploit error occurred: " .. errorMessage)
+    return success, result
 end
 
 function TiepUI:parseJSON(jsonString)
     local success, result = pcall(function()
         return HttpService:JSONDecode(jsonString)
     end)
-    
-    if success then
-        return result
-    else
-        self:debug("JSON parsing error: " .. tostring(result))
+    if not success then
+        self:notify("JSON Error", "Failed to parse JSON: " .. tostring(result), "error")
         return nil
     end
+    return result
 end
 
-function TiepUI:toJSON(data)
+function TiepUI:stringifyJSON(data)
     local success, result = pcall(function()
         return HttpService:JSONEncode(data)
     end)
-    
-    if success then
-        return result
-    else
-        self:debug("JSON encoding error: " .. tostring(result))
+    if not success then
+        self:notify("JSON Error", "Failed to stringify JSON: " .. tostring(result), "error")
         return nil
     end
+    return result
 end
 
 return TiepUI
