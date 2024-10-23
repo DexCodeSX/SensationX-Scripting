@@ -1,323 +1,135 @@
+-- TiepUI.lua
 local TiepUI = {}
-TiepUI.__index = TiepUI
-
-local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
-local HttpService = game:GetService("HttpService")
-local RunService = game:GetService("RunService")
+local TextService = game:GetService("TextService")
 local UserInputService = game:GetService("UserInputService")
 
-local FONTS = {
-    REGULAR = Font.new("rbxasset://fonts/families/GothamSSm.json"),
-    BOLD = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
-    LIGHT = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Light)
-}
+local Container = Instance.new("ScreenGui")
+Container.Name = "TiepUI"
+Container.Parent = gethui()
 
-local COLORS = {
-    BACKGROUND = Color3.fromRGB(30, 30, 30),
-    TEXT_PRIMARY = Color3.fromRGB(255, 255, 255),
-    TEXT_SECONDARY = Color3.fromRGB(200, 200, 200),
-    INFO = Color3.fromRGB(0, 170, 255),
-    SUCCESS = Color3.fromRGB(0, 255, 128),
-    WARNING = Color3.fromRGB(255, 170, 0),
-    ERROR = Color3.fromRGB(255, 64, 64)
-}
+local NotificationHolder = Instance.new("Frame")
+NotificationHolder.Name = "NotificationHolder"
+NotificationHolder.BackgroundTransparency = 1
+NotificationHolder.Position = UDim2.new(0.8, 0, 0.05, 0)
+NotificationHolder.Size = UDim2.new(0.2, 0, 0.9, 0)
+NotificationHolder.Parent = Container
 
-local DEFAULT_SETTINGS = {
-    NOTIFICATION_DURATION = 5,
-    TWEEN_DURATION = 0.5,
-    MAX_NOTIFICATIONS = 5,
-    NOTIFICATION_WIDTH = 300,
-    NOTIFICATION_PADDING = 10,
-    CORNER_RADIUS = 8
-}
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Padding = UDim.new(0, 5)
+UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Parent = NotificationHolder
 
-function TiepUI.new(customSettings)
-    local self = setmetatable({}, TiepUI)
-    self.settings = table.clone(DEFAULT_SETTINGS)
-    if customSettings then
-        for k, v in pairs(customSettings) do
-            self.settings[k] = v
-        end
+local function CreateNotification(title, text, duration, type)
+    local Notification = Instance.new("Frame")
+    Notification.Name = "Notification"
+    Notification.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Notification.BorderSizePixel = 0
+    Notification.Size = UDim2.new(1, 0, 0, 80)
+    Notification.Position = UDim2.new(1, 0, 0, 0)
+    Notification.Parent = NotificationHolder
+    
+    local Corner = Instance.new("UICorner")
+    Corner.CornerRadius = UDim.new(0, 8)
+    Corner.Parent = Notification
+    
+    local Title = Instance.new("TextLabel")
+    Title.Name = "Title"
+    Title.BackgroundTransparency = 1
+    Title.Position = UDim2.new(0, 10, 0, 5)
+    Title.Size = UDim2.new(1, -20, 0, 25)
+    Title.Font = Enum.Font.GothamBold
+    Title.Text = title
+    Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Title.TextSize = 16
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Parent = Notification
+    
+    local Message = Instance.new("TextLabel")
+    Message.Name = "Message"
+    Message.BackgroundTransparency = 1
+    Message.Position = UDim2.new(0, 10, 0, 35)
+    Message.Size = UDim2.new(1, -20, 0, 35)
+    Message.Font = Enum.Font.Gotham
+    Message.Text = text
+    Message.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Message.TextSize = 14
+    Message.TextWrapped = true
+    Message.TextXAlignment = Enum.TextXAlignment.Left
+    Message.Parent = Notification
+    
+    local Bar = Instance.new("Frame")
+    Bar.Name = "Bar"
+    Bar.BackgroundColor3 = type == "error" and Color3.fromRGB(255, 75, 75) or
+                          type == "success" and Color3.fromRGB(75, 255, 75) or
+                          Color3.fromRGB(75, 75, 255)
+    Bar.BorderSizePixel = 0
+    Bar.Position = UDim2.new(0, 0, 1, -2)
+    Bar.Size = UDim2.new(1, 0, 0, 2)
+    Bar.Parent = Notification
+    
+    local function AnimateIn()
+        local Tween = TweenService:Create(Notification, 
+            TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+            {Position = UDim2.new(0, 0, 0, 0)}
+        )
+        Tween:Play()
     end
-    self.notifications = {}
-    self.debugLogs = {}
-    self:createUI()
-    self:setupInputHandling()
-    return self
+    
+    local function AnimateOut()
+        local Tween = TweenService:Create(Notification,
+            TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
+            {Position = UDim2.new(1, 0, 0, 0)}
+        )
+        Tween:Play()
+        Tween.Completed:Wait()
+        Notification:Destroy()
+    end
+    
+    AnimateIn()
+    task.delay(duration or 5, AnimateOut)
 end
 
-function TiepUI:createUI()
-    self.screenGui = Instance.new("ScreenGui")
-    self.screenGui.Name = "TiepUI"
-    self.screenGui.ResetOnSpawn = false
-    self.screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-    self.notificationContainer = Instance.new("Frame")
-    self.notificationContainer.Name = "NotificationContainer"
-    self.notificationContainer.AnchorPoint = Vector2.new(1, 1)
-    self.notificationContainer.BackgroundTransparency = 1
-    self.notificationContainer.Position = UDim2.new(1, -20, 1, -20)
-    self.notificationContainer.Size = UDim2.new(0, self.settings.NOTIFICATION_WIDTH, 1, -40)
-    self.notificationContainer.Parent = self.screenGui
-
-    local uiListLayout = Instance.new("UIListLayout")
-    uiListLayout.Padding = UDim.new(0, self.settings.NOTIFICATION_PADDING)
-    uiListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    uiListLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-    uiListLayout.Parent = self.notificationContainer
-
-    self.screenGui.Parent = gethui()
+function TiepUI:Notify(options)
+    assert(type(options) == "table", "Options must be a table")
+    assert(options.title, "Title is required")
+    assert(options.text, "Text is required")
+    
+    CreateNotification(
+        options.title,
+        options.text,
+        options.duration,
+        options.type
+    )
 end
 
-function TiepUI:setupInputHandling()
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
-            self:toggleDebugConsole()
-        end
-    end)
+function TiepUI:Debug(message)
+    self:Notify({
+        title = "Debug",
+        text = tostring(message),
+        duration = 10,
+        type = "error"
+    })
 end
 
-function TiepUI:createNotification(title, message, notificationType)
-    local notification = Instance.new("Frame")
-    notification.Name = "Notification"
-    notification.BackgroundColor3 = COLORS.BACKGROUND
-    notification.BorderSizePixel = 0
-    notification.Size = UDim2.new(1, 0, 0, 0)
-    notification.ClipsDescendants = true
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, self.settings.CORNER_RADIUS)
-    corner.Parent = notification
-
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "Title"
-    titleLabel.Font = FONTS.BOLD
-    titleLabel.Text = title
-    titleLabel.TextColor3 = COLORS.TEXT_PRIMARY
-    titleLabel.TextSize = 18
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Position = UDim2.new(0, 15, 0, 10)
-    titleLabel.Size = UDim2.new(1, -30, 0, 20)
-    titleLabel.Parent = notification
-
-    local messageLabel = Instance.new("TextLabel")
-    messageLabel.Name = "Message"
-    messageLabel.Font = FONTS.REGULAR
-    messageLabel.Text = message
-    messageLabel.TextColor3 = COLORS.TEXT_SECONDARY
-    messageLabel.TextSize = 14
-    messageLabel.TextXAlignment = Enum.TextXAlignment.Left
-    messageLabel.TextYAlignment = Enum.TextYAlignment.Top
-    messageLabel.TextWrapped = true
-    messageLabel.BackgroundTransparency = 1
-    messageLabel.Position = UDim2.new(0, 15, 0, 35)
-    messageLabel.Size = UDim2.new(1, -30, 1, -45)
-    messageLabel.Parent = notification
-
-    local typeColor = COLORS[notificationType:upper()] or COLORS.INFO
-
-    local colorBar = Instance.new("Frame")
-    colorBar.Name = "ColorBar"
-    colorBar.BackgroundColor3 = typeColor
-    colorBar.BorderSizePixel = 0
-    colorBar.Position = UDim2.new(0, 0, 0, 0)
-    colorBar.Size = UDim2.new(0, 5, 1, 0)
-    colorBar.Parent = notification
-
-    local cornerBar = Instance.new("UICorner")
-    cornerBar.CornerRadius = UDim.new(0, self.settings.CORNER_RADIUS)
-    cornerBar.Parent = colorBar
-
-    return notification
+function TiepUI:Success(message)
+    self:Notify({
+        title = "Success",
+        text = tostring(message),
+        duration = 5,
+        type = "success"
+    })
 end
 
-function TiepUI:notify(title, message, notificationType)
-    if #self.notifications >= self.settings.MAX_NOTIFICATIONS then
-        self:removeNotification(self.notifications[1])
-    end
-
-    local notification = self:createNotification(title, message, notificationType)
-    notification.Parent = self.notificationContainer
-
-    local textSize = game:GetService("TextService"):GetTextSize(message, 14, FONTS.REGULAR, Vector2.new(self.settings.NOTIFICATION_WIDTH - 30, 1000))
-    local targetSize = UDim2.new(1, 0, 0, math.min(textSize.Y + 60, 200))
-
-    TweenService:Create(notification, TweenInfo.new(self.settings.TWEEN_DURATION, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = targetSize}):Play()
-
-    table.insert(self.notifications, notification)
-    self:updateNotificationPositions()
-
-    task.delay(self.settings.NOTIFICATION_DURATION, function()
-        self:removeNotification(notification)
-    end)
-
-    self:log("Notification created: " .. title)
-end
-
-function TiepUI:removeNotification(notification)
-    for i, v in ipairs(self.notifications) do
-        if v == notification then
-            table.remove(self.notifications, i)
-            break
-        end
-    end
-
-    local fadeTween = TweenService:Create(notification, TweenInfo.new(self.settings.TWEEN_DURATION, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundTransparency = 1})
-    fadeTween:Play()
-    fadeTween.Completed:Connect(function()
-        notification:Destroy()
-        self:updateNotificationPositions()
-    end)
-
-    self:log("Notification removed")
-end
-
-function TiepUI:updateNotificationPositions()
-    for i, notification in ipairs(self.notifications) do
-        local targetPosition = UDim2.new(0, 0, 1, -i * (notification.AbsoluteSize.Y + self.settings.NOTIFICATION_PADDING))
-        TweenService:Create(notification, TweenInfo.new(self.settings.TWEEN_DURATION, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = targetPosition}):Play()
-    end
-end
-
-function TiepUI:debugExploit(callback)
-    local success, result = pcall(callback)
-    if not success then
-        self:notify("Debug Error", "An error occurred while debugging: " .. tostring(result), "error")
-        self:log("Debug Error: " .. tostring(result), "error")
-    else
-        self:notify("Debug Success", "Debugging completed successfully.", "success")
-        self:log("Debug Success: " .. tostring(result), "success")
-    end
-    return success, result
-end
-
-function TiepUI:parseJSON(jsonString)
-    local success, result = pcall(function()
-        return HttpService:JSONDecode(jsonString)
-    end)
-    if not success then
-        self:notify("JSON Error", "Failed to parse JSON: " .. tostring(result), "error")
-        self:log("JSON Parse Error: " .. tostring(result), "error")
-        return nil
-    end
-    self:log("JSON parsed successfully")
-    return result
-end
-
-function TiepUI:stringifyJSON(data)
-    local success, result = pcall(function()
-        return HttpService:JSONEncode(data)
-    end)
-    if not success then
-        self:notify("JSON Error", "Failed to stringify JSON: " .. tostring(result), "error")
-        self:log("JSON Stringify Error: " .. tostring(result), "error")
-        return nil
-    end
-    self:log("JSON stringified successfully")
-    return result
-end
-
-function TiepUI:log(message, level)
-    level = level or "info"
-    local logEntry = {
-        timestamp = os.time(),
-        message = message,
-        level = level
-    }
-    table.insert(self.debugLogs, logEntry)
-    if #self.debugLogs > 1000 then
-        table.remove(self.debugLogs, 1)
-    end
-    if self.debugConsole then
-        self:updateDebugConsole()
-    end
-end
-
-function TiepUI:createDebugConsole()
-    self.debugConsole = Instance.new("Frame")
-    self.debugConsole.Name = "DebugConsole"
-    self.debugConsole.BackgroundColor3 = COLORS.BACKGROUND
-    self.debugConsole.BorderSizePixel = 0
-    self.debugConsole.Position = UDim2.new(0, 20, 0, 20)
-    self.debugConsole.Size = UDim2.new(0, 400, 0, 300)
-    self.debugConsole.Visible = false
-
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, self.settings.CORNER_RADIUS)
-    corner.Parent = self.debugConsole
-
-    local title = Instance.new("TextLabel")
-    title.Name = "Title"
-    title.Font = FONTS.BOLD
-    title.Text = "Debug Console"
-    title.TextColor3 = COLORS.TEXT_PRIMARY
-    title.TextSize = 18
-    title.BackgroundTransparency = 1
-    title.Position = UDim2.new(0, 10, 0, 10)
-    title.Size = UDim2.new(1, -20, 0, 20)
-    title.Parent = self.debugConsole
-
-    self.logContainer = Instance.new("ScrollingFrame")
-    self.logContainer.Name = "LogContainer"
-    self.logContainer.BackgroundTransparency = 1
-    self.logContainer.Position = UDim2.new(0, 10, 0, 40)
-    self.logContainer.Size = UDim2.new(1, -20, 1, -50)
-    self.logContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
-    self.logContainer.ScrollBarThickness = 6
-    self.logContainer.Parent = self.debugConsole
-
-    local uiListLayout = Instance.new("UIListLayout")
-    uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    uiListLayout.Parent = self.logContainer
-
-    self.debugConsole.Parent = self.screenGui
-end
-
-function TiepUI:updateDebugConsole()
-    if not self.debugConsole then return end
-
-    for _, child in ipairs(self.logContainer:GetChildren()) do
-        if child:IsA("TextLabel") then
-            child:Destroy()
-        end
-    end
-
-    for i, logEntry in ipairs(self.debugLogs) do
-        local logLabel = Instance.new("TextLabel")
-        logLabel.Name = "LogEntry" .. i
-        logLabel.Font = FONTS.REGULAR
-        logLabel.Text = string.format("[%s] %s: %s", os.date("%H:%M:%S", logEntry.timestamp), logEntry.level:upper(), logEntry.message)
-        logLabel.TextColor3 = COLORS[logEntry.level:upper()] or COLORS.TEXT_SECONDARY
-        logLabel.TextSize = 12
-        logLabel.TextXAlignment = Enum.TextXAlignment.Left
-        logLabel.TextYAlignment = Enum.TextYAlignment.Top
-        logLabel.TextWrapped = true
-        logLabel.BackgroundTransparency = 1
-        logLabel.Size = UDim2.new(1, 0, 0, 20)
-        logLabel.Parent = self.logContainer
-    end
-
-    self.logContainer.CanvasSize = UDim2.new(0, 0, 0, #self.debugLogs * 20)
-    self.logContainer.CanvasPosition = Vector2.new(0, self.logContainer.CanvasSize.Y.Offset)
-end
-
-function TiepUI:toggleDebugConsole()
-    if not self.debugConsole then
-        self:createDebugConsole()
-    end
-    self.debugConsole.Visible = not self.debugConsole.Visible
-    if self.debugConsole.Visible then
-        self:updateDebugConsole()
-    end
-end
-
-function TiepUI:clearDebugLogs()
-    self.debugLogs = {}
-    if self.debugConsole then
-        self:updateDebugConsole()
-    end
+function TiepUI:Info(message)
+    self:Notify({
+        title = "Info",
+        text = tostring(message),
+        duration = 5,
+        type = "info"
+    })
 end
 
 return TiepUI
