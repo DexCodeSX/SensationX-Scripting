@@ -1,95 +1,154 @@
--- TiepUI.lua
-local TiepUI = {}
-local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
-local TextService = game:GetService("TextService")
-local UserInputService = game:GetService("UserInputService")
+-- TiepUI/init.lua
+local TiepUI = {
+    Config = {
+        DefaultDuration = 5,
+        MaxNotifications = 5,
+        AnimationSpeed = 0.5,
+        Padding = 10,
+        Width = 300,
+        Height = 100
+    }
+}
 
-local Container = Instance.new("ScreenGui")
-Container.Name = "TiepUI"
-Container.Parent = gethui()
+local Services = {
+    CoreGui = game:GetService("CoreGui"),
+    TweenService = game:GetService("TweenService"),
+    TextService = game:GetService("TextService"),
+    UserInputService = game:GetService("UserInputService")
+}
 
-local NotificationHolder = Instance.new("Frame")
-NotificationHolder.Name = "NotificationHolder"
-NotificationHolder.BackgroundTransparency = 1
-NotificationHolder.Position = UDim2.new(0.8, 0, 0.05, 0)
-NotificationHolder.Size = UDim2.new(0.2, 0, 0.9, 0)
-NotificationHolder.Parent = Container
+local Components = {
+    Container = nil,
+    NotificationHolder = nil,
+    ActiveNotifications = {}
+}
 
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Padding = UDim.new(0, 5)
-UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Parent = NotificationHolder
+local function CreateBaseUI()
+    Components.Container = Instance.new("ScreenGui")
+    Components.Container.Name = "TiepUI"
+    Components.Container.Parent = gethui()
 
-local function CreateNotification(title, text, duration, type)
+    Components.NotificationHolder = Instance.new("Frame") 
+    Components.NotificationHolder.Name = "NotificationHolder"
+    Components.NotificationHolder.BackgroundTransparency = 1
+    Components.NotificationHolder.Position = UDim2.new(1, -TiepUI.Config.Width - 20, 0, 20)
+    Components.NotificationHolder.Size = UDim2.new(0, TiepUI.Config.Width, 1, -40)
+    Components.NotificationHolder.Parent = Components.Container
+
+    local UIListLayout = Instance.new("UIListLayout")
+    UIListLayout.Padding = UDim.new(0, TiepUI.Config.Padding)
+    UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+    UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    UIListLayout.Parent = Components.NotificationHolder
+end
+
+local function CreateNotification(options)
     local Notification = Instance.new("Frame")
     Notification.Name = "Notification"
-    Notification.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Notification.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     Notification.BorderSizePixel = 0
-    Notification.Size = UDim2.new(1, 0, 0, 80)
+    Notification.Size = UDim2.new(1, 0, 0, TiepUI.Config.Height)
     Notification.Position = UDim2.new(1, 0, 0, 0)
-    Notification.Parent = NotificationHolder
+    Notification.ClipsDescendants = true
     
+    local Shadow = Instance.new("ImageLabel")
+    Shadow.Name = "Shadow"
+    Shadow.BackgroundTransparency = 1
+    Shadow.Position = UDim2.new(0, -15, 0, -15)
+    Shadow.Size = UDim2.new(1, 30, 1, 30)
+    Shadow.Image = "rbxassetid://5554236805"
+    Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    Shadow.ImageTransparency = 0.6
+    Shadow.Parent = Notification
+
     local Corner = Instance.new("UICorner")
     Corner.CornerRadius = UDim.new(0, 8)
     Corner.Parent = Notification
     
+    local Accent = Instance.new("Frame")
+    Accent.Name = "Accent"
+    Accent.BackgroundColor3 = options.type == "error" and Color3.fromRGB(255, 64, 64) or
+                             options.type == "success" and Color3.fromRGB(64, 255, 64) or
+                             Color3.fromRGB(64, 128, 255)
+    Accent.BorderSizePixel = 0
+    Accent.Position = UDim2.new(0, 0, 0, 0)
+    Accent.Size = UDim2.new(0, 4, 1, 0)
+    Accent.Parent = Notification
+
+    local Content = Instance.new("Frame")
+    Content.Name = "Content"
+    Content.BackgroundTransparency = 1
+    Content.Position = UDim2.new(0, 15, 0, 0)
+    Content.Size = UDim2.new(1, -20, 1, 0)
+    Content.Parent = Notification
+
     local Title = Instance.new("TextLabel")
     Title.Name = "Title"
     Title.BackgroundTransparency = 1
-    Title.Position = UDim2.new(0, 10, 0, 5)
-    Title.Size = UDim2.new(1, -20, 0, 25)
+    Title.Position = UDim2.new(0, 0, 0, 10)
+    Title.Size = UDim2.new(1, 0, 0, 25)
     Title.Font = Enum.Font.GothamBold
-    Title.Text = title
+    Title.Text = options.title
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
     Title.TextSize = 16
     Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.Parent = Notification
+    Title.Parent = Content
     
     local Message = Instance.new("TextLabel")
     Message.Name = "Message"
     Message.BackgroundTransparency = 1
-    Message.Position = UDim2.new(0, 10, 0, 35)
-    Message.Size = UDim2.new(1, -20, 0, 35)
+    Message.Position = UDim2.new(0, 0, 0, 40)
+    Message.Size = UDim2.new(1, 0, 0, 40)
     Message.Font = Enum.Font.Gotham
-    Message.Text = text
+    Message.Text = options.text
     Message.TextColor3 = Color3.fromRGB(200, 200, 200)
     Message.TextSize = 14
     Message.TextWrapped = true
     Message.TextXAlignment = Enum.TextXAlignment.Left
-    Message.Parent = Notification
+    Message.Parent = Content
+
+    local ProgressBar = Instance.new("Frame")
+    ProgressBar.Name = "ProgressBar"
+    ProgressBar.BackgroundColor3 = Accent.BackgroundColor3
+    ProgressBar.BorderSizePixel = 0
+    ProgressBar.Position = UDim2.new(0, 0, 1, -2)
+    ProgressBar.Size = UDim2.new(1, 0, 0, 2)
+    ProgressBar.Parent = Notification
+
+    Notification.Parent = Components.NotificationHolder
     
-    local Bar = Instance.new("Frame")
-    Bar.Name = "Bar"
-    Bar.BackgroundColor3 = type == "error" and Color3.fromRGB(255, 75, 75) or
-                          type == "success" and Color3.fromRGB(75, 255, 75) or
-                          Color3.fromRGB(75, 75, 255)
-    Bar.BorderSizePixel = 0
-    Bar.Position = UDim2.new(0, 0, 1, -2)
-    Bar.Size = UDim2.new(1, 0, 0, 2)
-    Bar.Parent = Notification
+    return Notification
+end
+
+local function AnimateNotification(notification, duration)
+    local slideIn = TweenService:Create(notification,
+        TweenInfo.new(TiepUI.Config.AnimationSpeed, Enum.EasingStyle.Quart),
+        {Position = UDim2.new(0, 0, 0, 0)}
+    )
     
-    local function AnimateIn()
-        local Tween = TweenService:Create(Notification, 
-            TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
-            {Position = UDim2.new(0, 0, 0, 0)}
-        )
-        Tween:Play()
-    end
+    local progressTween = TweenService:Create(notification.ProgressBar,
+        TweenInfo.new(duration, Enum.EasingStyle.Linear),
+        {Size = UDim2.new(0, 0, 0, 2)}
+    )
     
-    local function AnimateOut()
-        local Tween = TweenService:Create(Notification,
-            TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.In),
-            {Position = UDim2.new(1, 0, 0, 0)}
-        )
-        Tween:Play()
-        Tween.Completed:Wait()
-        Notification:Destroy()
-    end
+    local fadeOut = TweenService:Create(notification,
+        TweenInfo.new(TiepUI.Config.AnimationSpeed, Enum.EasingStyle.Quart),
+        {Position = UDim2.new(1, 0, 0, 0)}
+    )
     
-    AnimateIn()
-    task.delay(duration or 5, AnimateOut)
+    slideIn:Play()
+    progressTween:Play()
+    
+    task.delay(duration, function()
+        fadeOut:Play()
+        fadeOut.Completed:Wait()
+        notification:Destroy()
+    end)
+end
+
+function TiepUI:Init()
+    CreateBaseUI()
+    return self
 end
 
 function TiepUI:Notify(options)
@@ -97,39 +156,53 @@ function TiepUI:Notify(options)
     assert(options.title, "Title is required")
     assert(options.text, "Text is required")
     
-    CreateNotification(
-        options.title,
-        options.text,
-        options.duration,
-        options.type
-    )
+    options.duration = options.duration or TiepUI.Config.DefaultDuration
+    
+    if #Components.ActiveNotifications >= TiepUI.Config.MaxNotifications then
+        local oldestNotification = Components.ActiveNotifications[1]
+        table.remove(Components.ActiveNotifications, 1)
+        oldestNotification:Destroy()
+    end
+    
+    local notification = CreateNotification(options)
+    table.insert(Components.ActiveNotifications, notification)
+    
+    AnimateNotification(notification, options.duration)
 end
 
-function TiepUI:Debug(message)
+function TiepUI:Debug(message, duration)
     self:Notify({
         title = "Debug",
         text = tostring(message),
-        duration = 10,
+        duration = duration or 10,
         type = "error"
     })
 end
 
-function TiepUI:Success(message)
+function TiepUI:Success(message, duration)
     self:Notify({
-        title = "Success",
+        title = "Success", 
         text = tostring(message),
-        duration = 5,
+        duration = duration or 5,
         type = "success"
     })
 end
 
-function TiepUI:Info(message)
+function TiepUI:Info(message, duration)
     self:Notify({
         title = "Info",
         text = tostring(message),
-        duration = 5,
+        duration = duration or 5,
         type = "info"
     })
 end
 
-return TiepUI
+function TiepUI:SetConfig(newConfig)
+    for key, value in pairs(newConfig) do
+        if TiepUI.Config[key] ~= nil then
+            TiepUI.Config[key] = value
+        end
+    end
+end
+
+return TiepUI:Init()
