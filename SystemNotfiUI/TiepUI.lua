@@ -1,13 +1,12 @@
--- TiepUI/init.lua
-local TiepUI = {
-    Config = {
-        DefaultDuration = 5,
-        MaxNotifications = 5,
-        AnimationSpeed = 0.5,
-        Padding = 10,
-        Width = 300,
-        Height = 100
-    }
+local TiepUI = {}
+
+TiepUI.Config = {
+    DefaultDuration = 5,
+    MaxNotifications = 5,
+    AnimationSpeed = 0.5,
+    Padding = 10,
+    Width = 300,
+    Height = 100
 }
 
 local Services = {
@@ -121,17 +120,17 @@ local function CreateNotification(options)
 end
 
 local function AnimateNotification(notification, duration)
-    local slideIn = TweenService:Create(notification,
+    local slideIn = Services.TweenService:Create(notification,
         TweenInfo.new(TiepUI.Config.AnimationSpeed, Enum.EasingStyle.Quart),
         {Position = UDim2.new(0, 0, 0, 0)}
     )
     
-    local progressTween = TweenService:Create(notification.ProgressBar,
+    local progressTween = Services.TweenService:Create(notification.ProgressBar,
         TweenInfo.new(duration, Enum.EasingStyle.Linear),
         {Size = UDim2.new(0, 0, 0, 2)}
     )
     
-    local fadeOut = TweenService:Create(notification,
+    local fadeOut = Services.TweenService:Create(notification,
         TweenInfo.new(TiepUI.Config.AnimationSpeed, Enum.EasingStyle.Quart),
         {Position = UDim2.new(1, 0, 0, 0)}
     )
@@ -146,12 +145,15 @@ local function AnimateNotification(notification, duration)
     end)
 end
 
-function TiepUI:Init()
-    CreateBaseUI()
-    return self
+function TiepUI.SetConfig(newConfig)
+    for key, value in pairs(newConfig) do
+        if TiepUI.Config[key] ~= nil then
+            TiepUI.Config[key] = value
+        end
+    end
 end
 
-function TiepUI:Notify(options)
+function TiepUI.Notify(options)
     assert(type(options) == "table", "Options must be a table")
     assert(options.title, "Title is required")
     assert(options.text, "Text is required")
@@ -170,8 +172,8 @@ function TiepUI:Notify(options)
     AnimateNotification(notification, options.duration)
 end
 
-function TiepUI:Debug(message, duration)
-    self:Notify({
+function TiepUI.Debug(message, duration)
+    TiepUI.Notify({
         title = "Debug",
         text = tostring(message),
         duration = duration or 10,
@@ -179,8 +181,8 @@ function TiepUI:Debug(message, duration)
     })
 end
 
-function TiepUI:Success(message, duration)
-    self:Notify({
+function TiepUI.Success(message, duration)
+    TiepUI.Notify({
         title = "Success", 
         text = tostring(message),
         duration = duration or 5,
@@ -188,8 +190,8 @@ function TiepUI:Success(message, duration)
     })
 end
 
-function TiepUI:Info(message, duration)
-    self:Notify({
+function TiepUI.Info(message, duration)
+    TiepUI.Notify({
         title = "Info",
         text = tostring(message),
         duration = duration or 5,
@@ -197,12 +199,5 @@ function TiepUI:Info(message, duration)
     })
 end
 
-function TiepUI:SetConfig(newConfig)
-    for key, value in pairs(newConfig) do
-        if TiepUI.Config[key] ~= nil then
-            TiepUI.Config[key] = value
-        end
-    end
-end
-
-return TiepUI:Init()
+CreateBaseUI()
+return TiepUI
